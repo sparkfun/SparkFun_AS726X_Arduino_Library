@@ -1,23 +1,12 @@
-SparkFun <PRODUCT NAME> Arduino Library
+SparkFun <AS726X> Arduino Library
 ========================================
 
-![SparkFun BME280 Breakout](https://github.com/sparkfun/SparkFun_BME280_Arduino_Library/blob/master/readme_picture.jpg)
+![AS726X](URL for picture of part)
 
-[*SparkFun BME280 (SEN-13676)*](https://www.sparkfun.com/products/13676)
+[*AS7262 (14347)*](https://www.sparkfun.com/products/14347)
+[*AS7263 (14351)*](https://www.sparkfun.com/products/14351)
 
-This library allows the user to:
-
-* Read pressure in Pa
-* Read temperature in C
-* Read humidity in %RH
-
-It also provides the following mathematical functions based from the above.
-
-* Read temperature in F
-* Read altitude in meters
-* Read altitude in feet
-
-Some examples include a circular buffer class for averaging.
+This is an Arduino IDE library to control the AS726X Spectral Sensor, which can be configured via I<sup>2</sup>C or SPI.
 
 Repository Contents
 -------------------
@@ -30,21 +19,18 @@ Repository Contents
 
 Documentation
 --------------
+* **[Library](https://github.com/sparkfun/Qwiic_Spectral_Sensor_AS726X)** - C library for the AS726X.
+* **[Hookup Guide](https://learn.sparkfun.com/tutorials/as726x-nirvi)** - Basic hookup guide for the AS726X.
 
-* **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
-* **[Product Repository](https://github.com/sparkfun/BME280-Breakout-Board)** - Main repository (including hardware files) for the SparkFun BME280 Breakout.
-* **[Hookup Guide](https://learn.sparkfun.com/tutorials/bme280-breakout-hookup-guide)** - Basic hookup guide for the SparkFun BME280 Breakout.
-
-Products that use this Library 
----------------------------------
-
-* [*SEN-13676*](https://www.sparkfun.com/products/13676)
+Product Versions
+----------------
+* [14347](https://www.sparkfun.com/products/14347)- AS7262 Visible Spectral Sensor
+* [14351](https://www.sparkfun.com/products/14351)- AS7263 Near Infrared Spectral Sensor
 
 Version History
 ---------------
-
-* [V_1.0.0](https://github.com/sparkfun/SparkFun_BME280_Arduino_Library/tree/V_1.0.0) - Public release.
-* [V_1.1.0](https://github.com/sparkfun/SparkFun_BME280_Arduino_Library/tree/V_1.1.0) - Pulled request to add decimal precision to readFloatPressure() and readFloatHumidity().
+* [vExxFxxZxxHxxLxxSxx](URL for tag specific to this version) - Description 
+* [vEyyFyyZyyHyyLyySyy](URL for tag specific to this version) - Description
 
 License Information
 -------------------
@@ -58,3 +44,5 @@ If you have any questions or concerns on licensing, please contact techsupport@s
 Distributed as-is; no warranty is given.
 
 - Your friends at SparkFun.
+
+_<COLLABORATION CREDIT>_
