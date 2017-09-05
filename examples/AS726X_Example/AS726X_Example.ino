@@ -78,9 +78,7 @@
 
 void setup() {
 }
-
-void loop() {
-  AS726X sensor;
+AS726X sensor;
   /*//You can also create an instance that runs on a different port (For instance, if you are using a teensy). The Gain and Measurement mode can also be changed. 
   //Uncomment the below code and comment the above declaration of 'sensor' to customize these settings.
   byte GAIN = 3;
@@ -99,10 +97,9 @@ void loop() {
   AS726X sensor(Wire, GAIN, MEASUREMENT_MODE);
   //New declaration of sensor with different values
   */
-  while (1 == 1) {
-    sensor.takeMeasurements();
-
-    //sensor.takeMeasurementsWithBulb(); //Uncomment to illuminate the onboard Bulb for taking measurements
-    sensor.printMeasurements();//Prints out all measurements
-  }
+  
+void loop() {
+  sensor.takeMeasurements();
+  //sensor.takeMeasurementsWithBulb(); //Uncomment to illuminate the onboard Bulb for taking measurements
+  sensor.printMeasurements();//Prints out all measurements
 }

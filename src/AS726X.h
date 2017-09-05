@@ -119,8 +119,6 @@ private:
 #define AS72XX_SLAVE_TX_VALID 0x02
 #define AS72XX_SLAVE_RX_VALID 0x01
 
-#define SENSORTYPE_AS7262 0x3E
-#define SENSORTYPE_AS7263 0x3F
 
 #define POLLING_DELAY 5 //Amount of ms to wait between checking for virtual register changes
 
