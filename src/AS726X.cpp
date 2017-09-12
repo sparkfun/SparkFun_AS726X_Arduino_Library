@@ -1,8 +1,14 @@
 #include "AS726X.h"
+#include "Arduino.h"
 //Sets up the sensor for constant read
 //Returns the sensor version (AS7262 or AS7263)
 
-AS726X::AS726X(TwoWire &wirePort, byte gain, byte measurementMode)
+AS726X::AS726X()
+{
+	
+}
+
+void AS726X::begin(TwoWire &wirePort, byte gain, byte measurementMode)
 {
 	_i2cPort = &wirePort;
 	_i2cPort->begin();
@@ -130,6 +136,50 @@ void AS726X::printMeasurements()
 		Serial.print(getCalibratedV(), 2);
 		Serial.print("] W[");
 		Serial.print(getCalibratedW(), 2);
+	}
+
+	Serial.print("] tempF[");
+	Serial.print(tempF, 1);
+	Serial.print("]");
+
+	Serial.println();
+}
+
+void AS726X::printUncalibratedMeasurements()
+{
+	float tempF = getTemperatureF();
+
+	if (_sensorVersion == SENSORTYPE_AS7262)
+	{
+		//Visible readings
+		Serial.print(" Reading: V[");
+		Serial.print(getViolet(), 2);
+		Serial.print("] B[");
+		Serial.print(getBlue(), 2);
+		Serial.print("] G[");
+		Serial.print(getGreen(), 2);
+		Serial.print("] Y[");
+		Serial.print(getYellow(), 2);
+		Serial.print("] O[");
+		Serial.print(getOrange(), 2);
+		Serial.print("] R[");
+		Serial.print(getRed(), 2);
+	}
+	else if (_sensorVersion == SENSORTYPE_AS7263)
+	{
+		//Near IR readings
+		Serial.print(" Reading: R[");
+		Serial.print(getR(), 2);
+		Serial.print("] S[");
+		Serial.print(getS(), 2);
+		Serial.print("] T[");
+		Serial.print(getT(), 2);
+		Serial.print("] U[");
+		Serial.print(getU(), 2);
+		Serial.print("] V[");
+		Serial.print(getV(), 2);
+		Serial.print("] W[");
+		Serial.print(getW(), 2);
 	}
 
 	Serial.print("] tempF[");
