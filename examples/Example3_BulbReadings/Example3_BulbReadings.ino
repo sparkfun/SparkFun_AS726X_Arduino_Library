@@ -22,14 +22,12 @@
 
 #include "AS726X.h"
 AS726X sensor;//Creates the sensor object
-byte GAIN = 0;
-byte MEASUREMENT_MODE = 0;
 
 void setup() {
-  sensor.begin(Wire, GAIN, MEASUREMENT_MODE);//Initializes the sensor with non default values
+  sensor.begin(Wire, GAIN, MEASUREMENT_MODE);
 }
 
 void loop() {
-  sensor.takeMeasurements();
+  sensor.takeMeasurementsWithBulb();
   sensor.printMeasurements();
 }
