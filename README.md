@@ -1,4 +1,4 @@
-SparkFun <AS726X> Arduino Library
+SparkFun AS726X Arduino Library
 ========================================
 
 ![AS726X](https://github.com/sparkfun/Sparkfun_AS726X_Arduino_Library/blob/master/extras/14351-01.jpg)
