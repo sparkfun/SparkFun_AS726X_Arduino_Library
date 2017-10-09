@@ -30,6 +30,6 @@ void setup() {
 }
 
 void loop() {
-  sensor.takeMeasurementsWithBulb();
+  sensor.takeMeasurements();
   sensor.printMeasurements();
 }

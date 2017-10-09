@@ -79,11 +79,9 @@ AS726X sensor;
 
 void setup() {
   sensor.begin();
-  sensor.setMeasurementMode(1);
 }
 
 void loop() {
-  sensor.enableInterrupt();
   sensor.takeMeasurements();
   sensor.printMeasurements();
 }
