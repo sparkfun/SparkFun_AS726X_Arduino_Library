@@ -1,9 +1,10 @@
 SparkFun <AS726X> Arduino Library
 ========================================
 
-![AS726X](URL for picture of part)
+![AS726X](https://github.com/sparkfun/Sparkfun_AS726X_Arduino_Library/blob/master/extras/14351-01.jpg)
 
 [*AS7262 (14347)*](https://www.sparkfun.com/products/14347)
+
 [*AS7263 (14351)*](https://www.sparkfun.com/products/14351)
 
 This is an Arduino IDE library to control the AS726X Spectral Sensor, which can be configured via I<sup>2</sup>C or SPI.
