@@ -153,33 +153,33 @@ void AS726X::printUncalibratedMeasurements()
 	{
 		//Visible readings
 		Serial.print(" Reading: V[");
-		Serial.print(getViolet());
+		Serial.print(getViolet(), 2);
 		Serial.print("] B[");
-		Serial.print(getBlue());
+		Serial.print(getBlue(), 2);
 		Serial.print("] G[");
-		Serial.print(getGreen());
+		Serial.print(getGreen(), 2);
 		Serial.print("] Y[");
-		Serial.print(getYellow());
+		Serial.print(getYellow(), 2);
 		Serial.print("] O[");
-		Serial.print(getOrange());
+		Serial.print(getOrange(), 2);
 		Serial.print("] R[");
-		Serial.print(getRed());
+		Serial.print(getRed(), 2);
 	}
 	else if (_sensorVersion == SENSORTYPE_AS7263)
 	{
 		//Near IR readings
 		Serial.print(" Reading: R[");
-		Serial.print(getR());
+		Serial.print(getR(), 2);
 		Serial.print("] S[");
-		Serial.print(getS());
+		Serial.print(getS(), 2);
 		Serial.print("] T[");
-		Serial.print(getT());
+		Serial.print(getT(), 2);
 		Serial.print("] U[");
-		Serial.print(getU());
+		Serial.print(getU(), 2);
 		Serial.print("] V[");
-		Serial.print(getV());
+		Serial.print(getV(), 2);
 		Serial.print("] W[");
-		Serial.print(getW());
+		Serial.print(getW(), 2);
 	}
 
 	Serial.print("] tempF[");
