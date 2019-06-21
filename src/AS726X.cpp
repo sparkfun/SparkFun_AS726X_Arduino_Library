@@ -8,16 +8,13 @@ AS726X::AS726X()
 	
 }
 
-void AS726X::begin(TwoWire &wirePort, byte gain, byte measurementMode)
+bool AS726X::begin(TwoWire &wirePort, byte gain, byte measurementMode)
 {
 	_i2cPort = &wirePort;
-	_i2cPort->begin();
-	Serial.begin(115200);
 	_sensorVersion = virtualReadRegister(AS726x_HW_VERSION);
 	if (_sensorVersion != 0x3E && _sensorVersion != 0x3F) //HW version for AS7262 and AS7263
 	{
-		Serial.print("ID (should be 0x3E or 0x3F): 0x");
-		Serial.println(_sensorVersion, HEX);
+		return false;
 	}
 
 	setBulbCurrent(0b00); //Set to 12.5mA (minimum)
@@ -35,12 +32,14 @@ void AS726X::begin(TwoWire &wirePort, byte gain, byte measurementMode)
 
 	if (_sensorVersion == 0)
 	{
-		Serial.println("Sensor failed to respond. Check wiring.");
-		while (1); //Freeze!
+		return false;
 	}
+	return true;
+}
 
-	if (_sensorVersion == SENSORTYPE_AS7262) Serial.println("AS7262 online!");
-	if (_sensorVersion == SENSORTYPE_AS7263) Serial.println("AS7263 online!");
+uint8_t AS726X::getVersion()
+{
+	return _sensorVersion;
 }
 
 //Sets the measurement mode
@@ -98,95 +97,6 @@ void AS726X::disableInterrupt()
 	byte value = virtualReadRegister(AS726x_CONTROL_SETUP); //Read
 	value &= 0b10111111; //Clear INT bit
 	virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
-}
-
-//Prints all measurements
-void AS726X::printMeasurements()
-{
-	float tempF = getTemperatureF();
-
-	if (_sensorVersion == SENSORTYPE_AS7262)
-	{
-		//Visible readings
-		Serial.print(" Reading: V[");
-		Serial.print(getCalibratedViolet(), 2);
-		Serial.print("] B[");
-		Serial.print(getCalibratedBlue(), 2);
-		Serial.print("] G[");
-		Serial.print(getCalibratedGreen(), 2);
-		Serial.print("] Y[");
-		Serial.print(getCalibratedYellow(), 2);
-		Serial.print("] O[");
-		Serial.print(getCalibratedOrange(), 2);
-		Serial.print("] R[");
-		Serial.print(getCalibratedRed(), 2);
-	}
-	else if (_sensorVersion == SENSORTYPE_AS7263)
-	{
-		//Near IR readings
-		Serial.print(" Reading: R[");
-		Serial.print(getCalibratedR(), 2);
-		Serial.print("] S[");
-		Serial.print(getCalibratedS(), 2);
-		Serial.print("] T[");
-		Serial.print(getCalibratedT(), 2);
-		Serial.print("] U[");
-		Serial.print(getCalibratedU(), 2);
-		Serial.print("] V[");
-		Serial.print(getCalibratedV(), 2);
-		Serial.print("] W[");
-		Serial.print(getCalibratedW(), 2);
-	}
-
-	Serial.print("] tempF[");
-	Serial.print(tempF, 1);
-	Serial.print("]");
-
-	Serial.println();
-}
-
-void AS726X::printUncalibratedMeasurements()
-{
-	float tempF = getTemperatureF();
-
-	if (_sensorVersion == SENSORTYPE_AS7262)
-	{
-		//Visible readings
-		Serial.print(" Reading: V[");
-		Serial.print(getViolet());
-		Serial.print("] B[");
-		Serial.print(getBlue());
-		Serial.print("] G[");
-		Serial.print(getGreen());
-		Serial.print("] Y[");
-		Serial.print(getYellow());
-		Serial.print("] O[");
-		Serial.print(getOrange());
-		Serial.print("] R[");
-		Serial.print(getRed());
-	}
-	else if (_sensorVersion == SENSORTYPE_AS7263)
-	{
-		//Near IR readings
-		Serial.print(" Reading: R[");
-		Serial.print(getR());
-		Serial.print("] S[");
-		Serial.print(getS());
-		Serial.print("] T[");
-		Serial.print(getT());
-		Serial.print("] U[");
-		Serial.print(getU());
-		Serial.print("] V[");
-		Serial.print(getV());
-		Serial.print("] W[");
-		Serial.print(getW());
-	}
-
-	Serial.print("] tempF[");
-	Serial.print(tempF, 1);
-	Serial.print("]");
-
-	Serial.println();
 }
 
 //Tells IC to take measurements and polls for data ready flag

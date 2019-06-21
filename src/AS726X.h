@@ -12,11 +12,10 @@
 class AS726X {
 public:
 	AS726X();
-	void begin(TwoWire &wirePort = Wire, byte gain = 3, byte measurementMode = 3);
+	bool begin(TwoWire &wirePort = Wire, byte gain = 3, byte measurementMode = 3);
 	void takeMeasurements();
+	uint8_t getVersion();
 	void takeMeasurementsWithBulb();
-	void printMeasurements();
-	void printUncalibratedMeasurements();
 	byte getTemperature();
 	float getTemperatureF();
 	void setMeasurementMode(byte mode);
