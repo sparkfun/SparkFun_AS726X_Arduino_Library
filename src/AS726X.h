@@ -12,23 +12,23 @@
 class AS726X {
 public:
 	AS726X();
-	bool begin(TwoWire &wirePort = Wire, byte gain = 3, byte measurementMode = 3);
+	bool begin(TwoWire &wirePort = Wire, uint8_t gain = 3, uint8_t measurementMode = 3);
 	void takeMeasurements();
 	uint8_t getVersion();
 	void takeMeasurementsWithBulb();
-	byte getTemperature();
+	uint8_t getTemperature();
 	float getTemperatureF();
-	void setMeasurementMode(byte mode);
-	boolean dataAvailable();
+	void setMeasurementMode(uint8_t mode);
+	bool dataAvailable();
 	void enableIndicator();
 	void disableIndicator();
-	void setIndicatorCurrent(byte current);
+	void setIndicatorCurrent(uint8_t current);
 	void enableBulb();
 	void disableBulb();
-	void setBulbCurrent(byte current);
+	void setBulbCurrent(uint8_t current);
 	void softReset();
-	void setGain(byte gain);
-	void setIntegrationTime(byte integrationValue);
+	void setGain(uint8_t gain);
+	void setIntegrationTime(uint8_t integrationValue);
 	void enableInterrupt();
 	void disableInterrupt();
 	//Get the various color readings
@@ -64,14 +64,14 @@ public:
 
 private:
 	TwoWire *_i2cPort;
-	int getChannel(byte channelRegister);
-	float getCalibratedValue(byte calAddress);
+	int getChannel(uint8_t channelRegister);
+	float getCalibratedValue(uint8_t calAddress);
 	float convertBytesToFloat(uint32_t myLong);
-	boolean clearDataAvailable();
-	byte virtualReadRegister(byte virtualAddr);
-	void virtualWriteRegister(byte virtualAddr, byte dataToWrite);
-	void writeRegister(byte addr, byte val);
-	byte readRegister(byte addr);
+	void clearDataAvailable();
+	uint8_t virtualReadRegister(uint8_t virtualAddr);
+	void virtualWriteRegister(uint8_t virtualAddr, uint8_t dataToWrite);
+	void writeRegister(uint8_t addr, uint8_t val);
+	uint8_t readRegister(uint8_t addr);
 #define AS726X_ADDR 0x49 //7-bit unshifted default I2C Address
 #define SENSORTYPE_AS7262 0x3E
 #define SENSORTYPE_AS7263 0x3F
@@ -125,7 +125,7 @@ private:
 
 #define POLLING_DELAY 5 //Amount of ms to wait between checking for virtual register changes
 
-	byte _sensorVersion = 0;
+	uint8_t _sensorVersion = 0;
 };
 
 #endif
