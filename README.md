@@ -25,7 +25,6 @@ Repository Contents
 
 Documentation
 --------------
-* **[Library](https://github.com/sparkfun/Qwiic_Spectral_Sensor_AS726X)** - C library for the AS726X.
 * **[Hookup Guide](https://learn.sparkfun.com/tutorials/as726x-nirvi)** - Basic hookup guide for the AS726X.
 * **[Product Repository](https://github.com/sparkfun/Qwiic_Spectral_Sensor_AS726X)** - Main repository (including hardware files) for the AS726X Spectral Sensor.
 
