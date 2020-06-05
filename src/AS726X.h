@@ -13,7 +13,6 @@ class AS726X {
 public:
 	AS726X();
 	bool begin(TwoWire &wirePort = Wire, uint8_t gain = 3, uint8_t measurementMode = 3);
-	void end();
 	bool isError();
 	void takeMeasurements();
 	uint8_t getVersion();
