@@ -10,8 +10,11 @@ AS726X::AS726X()
 
 bool AS726X::begin(TwoWire &wirePort, uint8_t gain, uint8_t measurementMode)
 {
+	_sensorError = false;	//Reset any errors
 	_i2cPort = &wirePort;
 	_sensorVersion = virtualReadRegister(AS726x_HW_VERSION);
+	if(_sensorError)	//(_sensorError is set in readRegister) No point going any further, and doing so seems to crash the I2C bus
+		return false;
 	if (_sensorVersion != 0x3E && _sensorVersion != 0x3F) //HW version for AS7262 and AS7263
 	{
 		return false;
@@ -34,7 +37,16 @@ bool AS726X::begin(TwoWire &wirePort, uint8_t gain, uint8_t measurementMode)
 	{
 		return false;
 	}
+	
+	if(_sensorError)	//Catch-all, just in case one of the above failed
+		return false;
+	
 	return true;
+}
+
+bool AS726X::isError()
+{
+	return _sensorError;
 }
 
 uint8_t AS726X::getVersion()
@@ -53,6 +65,7 @@ void AS726X::setMeasurementMode(uint8_t mode)
 
 	//Read, mask/set, write
 	uint8_t value = virtualReadRegister(AS726x_CONTROL_SETUP); //Read
+
 	value &= 0b11110011; //Clear BANK bits
 	value |= (mode << 2); //Set BANK bits with user's choice
 	virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
@@ -102,10 +115,8 @@ void AS726X::disableInterrupt()
 //Tells IC to take measurements and polls for data ready flag
 void AS726X::takeMeasurements()
 {
-	clearDataAvailable(); //Clear DATA_RDY flag when using Mode 3
-
-						  //Goto mode 3 for one shot measurement of all channels
-	setMeasurementMode(3);
+	clearDataAvailable(); //Clear DATA_RDY flag when using Mode 3						  
+	setMeasurementMode(3);	//Goto mode 3 for one shot measurement of all channels
 
 	//Wait for data to be ready
 	while (dataAvailable() == false) delay(POLLING_DELAY);
@@ -118,11 +129,8 @@ void AS726X::takeMeasurementsWithBulb()
 {
 	//enableIndicator(); //Tell the world we are taking a reading. 
 	//The indicator LED is red and may corrupt the readings
-
 	enableBulb(); //Turn on bulb to take measurement
-
 	takeMeasurements();
-
 	disableBulb(); //Turn off bulb to avoid heating sensor
 				   //disableIndicator();
 }
@@ -146,8 +154,12 @@ int AS726X::getW() { return(getChannel(AS7263_W)); }
 //A the 16-bit value stored in a given channel registerReturns 
 int AS726X::getChannel(uint8_t channelRegister)
 {
+	if(_sensorError)	//May be misconfigured, don't risk trying a read
+		return -1;
+	
 	int colorData = virtualReadRegister(channelRegister) << 8; //High uint8_t
 	colorData |= virtualReadRegister(channelRegister + 1); //Low uint8_t
+	
 	return(colorData);
 }
 
@@ -170,10 +182,14 @@ float AS726X::getCalibratedW() { return(getCalibratedValue(AS7263_W_CAL)); }
 float AS726X::getCalibratedValue(uint8_t calAddress)
 {
 	uint8_t b0, b1, b2, b3;
-	b0 = virtualReadRegister(calAddress + 0);
-	b1 = virtualReadRegister(calAddress + 1);
-	b2 = virtualReadRegister(calAddress + 2);
-	b3 = virtualReadRegister(calAddress + 3);
+	if(_sensorError)	//May be misconfigured, don't risk trying a read 
+		return -1;	
+	//(return must be done after the first failure, or it messes up the I2C bus?)
+	b0 = virtualReadRegister(calAddress + 0);	if(_sensorError) return -1;	//If any of the reads are errors, send back a definite error
+	b1 = virtualReadRegister(calAddress + 1);	if(_sensorError) return -1;	//If any of the reads are errors, send back a definite error
+	b2 = virtualReadRegister(calAddress + 2);	if(_sensorError) return -1;	//If any of the reads are errors, send back a definite error
+	b3 = virtualReadRegister(calAddress + 3);	if(_sensorError) return -1;	//If any of the reads are errors, send back a definite error
+		
 
 	//Channel calibrated values are stored big-endian
 	uint32_t calBytes = 0;
@@ -197,7 +213,10 @@ float AS726X::convertBytesToFloat(uint32_t myLong)
 bool AS726X::dataAvailable()
 {
 	uint8_t value = virtualReadRegister(AS726x_CONTROL_SETUP);
-	return (value & (1 << 1)); //Bit 1 is DATA_RDY
+	if(_sensorError)	//An error
+		return false;
+	else
+		return (value & (1 << 1)); //Bit 1 is DATA_RDY
 }
 
 //Clears the DRDY flag
@@ -276,7 +295,11 @@ void AS726X::setBulbCurrent(uint8_t current)
 //Pretty inaccurate: +/-8.5C
 uint8_t AS726X::getTemperature()
 {
-	return (virtualReadRegister(AS726x_DEVICE_TEMP));
+	uint8_t retVal = virtualReadRegister(AS726x_DEVICE_TEMP);
+	if(_sensorError)
+		return 0xFF;
+	else 
+		return retVal;
 }
 
 //Convert to F if needed
@@ -284,7 +307,10 @@ float AS726X::getTemperatureF()
 {
 	float temperatureF = getTemperature();
 	temperatureF = temperatureF * 1.8 + 32.0;
-	return (temperatureF);
+	if(_sensorError)
+		return -1000;	//Wow, the error was so powerful that the AS726X has gone below absolute zero!
+	else
+		return (temperatureF);
 }
 
 //Does a soft reset
@@ -304,6 +330,7 @@ uint8_t AS726X::virtualReadRegister(uint8_t virtualAddr)
 
 	//Do a prelim check of the read register
 	status = readRegister(AS72XX_SLAVE_STATUS_REG);
+	if(_sensorError) return 0xFF;	//Arbitrary value (not error value, as it could be legitimate data)(_sensorError is set in readRegister)
 	if ((status & AS72XX_SLAVE_RX_VALID) != 0) //There is data to be read
 	{
 		//Serial.println("Premptive read");
@@ -314,6 +341,7 @@ uint8_t AS726X::virtualReadRegister(uint8_t virtualAddr)
 	while (1)
 	{
 		status = readRegister(AS72XX_SLAVE_STATUS_REG);
+		if(_sensorError) return 0xFF;	//Arbitrary value (not error value, as it could be legitimate data)(_sensorError is set in readRegister)
 		if ((status & AS72XX_SLAVE_TX_VALID) == 0) break; // If TX bit is clear, it is ok to write
 		delay(POLLING_DELAY);
 	}
@@ -325,6 +353,7 @@ uint8_t AS726X::virtualReadRegister(uint8_t virtualAddr)
 	while (1)
 	{
 		status = readRegister(AS72XX_SLAVE_STATUS_REG);
+		if(_sensorError) return 0xFF;	//Arbitrary value (not error value, as it could be legitimate data)(_sensorError is set in readRegister)
 		if ((status & AS72XX_SLAVE_RX_VALID) != 0) break; // Read data is ready.
 		delay(POLLING_DELAY);
 	}
@@ -342,6 +371,7 @@ void AS726X::virtualWriteRegister(uint8_t virtualAddr, uint8_t dataToWrite)
 	while (1)
 	{
 		status = readRegister(AS72XX_SLAVE_STATUS_REG);
+		if(_sensorError) return;	//Arbitrary value (not error value, as it could be legitimate data)(_sensorError is set in readRegister)
 		if ((status & AS72XX_SLAVE_TX_VALID) == 0) break; // No inbound TX pending at slave. Okay to write now.
 		delay(POLLING_DELAY);
 	}
@@ -353,7 +383,8 @@ void AS726X::virtualWriteRegister(uint8_t virtualAddr, uint8_t dataToWrite)
 	while (1)
 	{
 		status = readRegister(AS72XX_SLAVE_STATUS_REG);
-		if ((status & AS72XX_SLAVE_TX_VALID) == 0) break; // No inbound TX pending at slave. Okay to write now.
+		if(_sensorError) return;	//(_sensorError is set in readRegister)
+		if ((status & AS72XX_SLAVE_TX_VALID) == 0) break; // No inbound TX pending at slave. Okay to write now.		
 		delay(POLLING_DELAY);
 	}
 
@@ -363,26 +394,34 @@ void AS726X::virtualWriteRegister(uint8_t virtualAddr, uint8_t dataToWrite)
 
 //Reads from a give location from the AS726x
 uint8_t AS726X::readRegister(uint8_t addr)
-{
+{	
 	_i2cPort->beginTransmission(AS726X_ADDR);
 	_i2cPort->write(addr);
-	_i2cPort->endTransmission();
-
+	if(_i2cPort->endTransmission() > 0) {	//An error has occurred
+		_sensorError = true;
+		return (0xFF); //Arbitrary value (not error value, as it could be legitimate data)
+	}
+	_sensorError = false;	//Allow recovery if there is a successful read
+	
 	_i2cPort->requestFrom(AS726X_ADDR, 1);
 	if (_i2cPort->available()) {
+		_sensorError = false;	//Allow recovery if there is a successful read
 		return (_i2cPort->read());
 	}
 	else {
-		Serial.println("I2C Error");
-		return (0xFF); //Error
+		_sensorError = true;
+		return (0xFF); //Arbitrary value (not error value, as it could be legitimate data)
 	}
 }
 
 //Write a value to a spot in the AS726x
 void AS726X::writeRegister(uint8_t addr, uint8_t val)
 {
+	if(_sensorError) return;	//Don't attempt to write anything if there was a read error (just in case it works, and incorrect values are written) 
+		
 	_i2cPort->beginTransmission(AS726X_ADDR);
 	_i2cPort->write(addr);
 	_i2cPort->write(val);
-	_i2cPort->endTransmission();
+	if(_i2cPort->endTransmission() > 0)	//An error has occurred
+		_sensorError = true;			
 }

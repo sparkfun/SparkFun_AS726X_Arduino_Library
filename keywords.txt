@@ -60,6 +60,7 @@ virtualReadRegister	KEYWORD2
 virtualWriteRegister	KEYWORD2
 writeRegister	KEYWORD2
 readRegister	KEYWORD2
+isError KEYWORD2
 ###################################################################
 # Constants
 ###################################################################
@@ -107,3 +108,4 @@ SENSORTYPE_AS7262	LITERAL1
 SENSORTYPE_AS7263	LITERAL1
 POLLING_DELAY	LITERAL1
 _sensorVersion	LITERAL1
+_sensorError	LITERAL1
