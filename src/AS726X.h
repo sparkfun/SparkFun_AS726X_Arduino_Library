@@ -13,6 +13,8 @@ class AS726X {
 public:
 	AS726X();
 	bool begin(TwoWire &wirePort = Wire, uint8_t gain = 3, uint8_t measurementMode = 3);
+	void end();
+	bool isError();
 	void takeMeasurements();
 	uint8_t getVersion();
 	void takeMeasurementsWithBulb();
@@ -126,6 +128,7 @@ private:
 #define POLLING_DELAY 5 //Amount of ms to wait between checking for virtual register changes
 
 	uint8_t _sensorVersion = 0;
+	bool _sensorError = false;
 };
 
 #endif
