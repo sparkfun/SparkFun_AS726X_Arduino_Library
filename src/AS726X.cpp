@@ -12,7 +12,9 @@ bool AS726X::begin(TwoWire &wirePort, uint8_t gain, uint8_t measurementMode)
 {
 	_i2cPort = &wirePort;
 	_sensorVersion = virtualReadRegister(AS726x_HW_VERSION);
-	if (_sensorVersion != 0x3E && _sensorVersion != 0x3F) //HW version for AS7262 and AS7263
+
+	//HW version for AS7262, AS7263 and AS7261
+	if (_sensorVersion != 0x3E && _sensorVersion != 0x3F && _sensorVersion != 0x40) 
 	{
 		return false;
 	}
@@ -28,12 +30,8 @@ bool AS726X::begin(TwoWire &wirePort, uint8_t gain, uint8_t measurementMode)
 
 	setGain(gain); //Set gain to 64x
 
-	setMeasurementMode(measurementMode); //One-shot reading of VBGYOR
+	setMeasurementMode(measurementMode); //One-shot mode
 
-	if (_sensorVersion == 0)
-	{
-		return false;
-	}
 	return true;
 }
 
@@ -58,6 +56,12 @@ void AS726X::setMeasurementMode(uint8_t mode)
 	virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
 }
 
+uint8_t AS726X::getMeasurementMode()
+{
+	uint8_t value = virtualReadRegister(AS726x_CONTROL_SETUP); //Read
+	return (value & 0b00001100); //Isolate BANK bits.
+}
+
 //Sets the gain value
 //Gain 0: 1x (power-on default)
 //Gain 1: 3.7x
@@ -74,12 +78,24 @@ void AS726X::setGain(uint8_t gain)
 	virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
 }
 
+uint8_t AS726X::getGain()
+{
+	uint8_t value = virtualReadRegister(AS726x_CONTROL_SETUP); //Read
+	return (value & 0b00110000); //Isolate GAIN bits.
+}
+
 //Sets the integration value
 //Give this function a uint8_t from 0 to 255.
 //Time will be 2.8ms * [integration value]
 void AS726X::setIntegrationTime(uint8_t integrationValue)
 {
 	virtualWriteRegister(AS726x_INT_T, integrationValue); //Write
+}
+
+uint8_t AS726X::getIntegrationTime()
+{
+	uint8_t value = virtualReadRegister(AS726x_INT_T); //Read
+	return value;
 }
 
 void AS726X::enableInterrupt()
@@ -143,6 +159,14 @@ int AS726X::getU() { return(getChannel(AS7263_U)); }
 int AS726X::getV() { return(getChannel(AS7263_V)); }
 int AS726X::getW() { return(getChannel(AS7263_W)); }
 
+//Get the various CIE readings
+int AS726X::getX() { return(getChannel(AS7261_X)); }
+int AS726X::getY() { return(getChannel(AS7261_Y)); }
+int AS726X::getZ() { return(getChannel(AS7261_Z)); }
+int AS726X::getNir() { return(getChannel(AS7261_NIR)); }
+int AS726X::getDark() { return(getChannel(AS7261_DARK)); }
+int AS726X::getClear() { return(getChannel(AS7261_CLEAR)); }
+
 //A the 16-bit value stored in a given channel registerReturns 
 int AS726X::getChannel(uint8_t channelRegister)
 {
@@ -165,6 +189,19 @@ float AS726X::getCalibratedT() { return(getCalibratedValue(AS7263_T_CAL)); }
 float AS726X::getCalibratedU() { return(getCalibratedValue(AS7263_U_CAL)); }
 float AS726X::getCalibratedV() { return(getCalibratedValue(AS7263_V_CAL)); }
 float AS726X::getCalibratedW() { return(getCalibratedValue(AS7263_W_CAL)); }
+
+float AS726X::getCalibratedX() { return(getCalibratedValue(AS7261_X_CAL)); }
+float AS726X::getCalibratedY() { return(getCalibratedValue(AS7261_Y_CAL)); }
+float AS726X::getCalibratedZ() { return(getCalibratedValue(AS7261_Z_CAL)); }
+float AS726X::getCalibratedX1931() { return(getCalibratedValue(AS7261_X1931_CAL)); }
+float AS726X::getCalibratedY1931() { return(getCalibratedValue(AS7261_Y1931_CAL)); }
+float AS726X::getCalibratedUPri1976() { return(getCalibratedValue(AS7261_UPRI_CAL)); }
+float AS726X::getCalibratedVPri1976() { return(getCalibratedValue(AS7261_VPRI_CAL)); }
+float AS726X::getCalibratedU1976() { return(getCalibratedValue(AS7261_U_CAL)); }
+float AS726X::getCalibratedV1976() { return(getCalibratedValue(AS7261_V_CAL)); }
+float AS726X::getCalibratedDUV1976() { return(getCalibratedValue(AS7261_DUV_CAL)); }
+int AS726X::getCalibratedLux()  { return(getChannel(AS7261_LUX_CAL)); }
+int AS726X::getCalibratedCCT() { return(getChannel(AS7261_CCT_CAL)); }
 
 //Given an address, read four uint8_ts and return the floating point calibrated value
 float AS726X::getCalibratedValue(uint8_t calAddress)
