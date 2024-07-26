@@ -18,7 +18,6 @@ bool AS726X::begin(TwoWire &wirePort, uint8_t gain, uint8_t measurementMode)
 		_sensorVersion != SENSORTYPE_AS7262 && 
 		_sensorVersion != SENSORTYPE_AS7263) 
 	{
-		Serial.print("_sensorVersion: "); Serial.println(_sensorVersion);
 		return false;
 	}
 
