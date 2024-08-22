@@ -37,7 +37,7 @@ Version History
 ---------------
 * [V1.0.0](https://github.com/sparkfun/Sparkfun_AS726X_Arduino_Library/releases/tag/V1.0.0) - Initial Release
 * [V1.0.1](https://github.com/sparkfun/Sparkfun_AS726X_Arduino_Library/releases/tag/V1.0.1) - Updating printUncalibratedMeasurements()
-
+* [v2.0.0](https://github.com/sparkfun/SparkFun_AS726X_Arduino_Library/releases/tag/v2.0.0) - Add error handling. Thanks @ufanders!
 
 License Information
 -------------------
