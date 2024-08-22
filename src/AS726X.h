@@ -13,27 +13,27 @@ class AS726X {
 public:
 	AS726X();
 	bool begin(TwoWire &wirePort = Wire, uint8_t gain = 3, uint8_t measurementMode = 3);
-	void takeMeasurements();
+	int takeMeasurements();
 	uint8_t getVersion();
-	void takeMeasurementsWithBulb();
+	int takeMeasurementsWithBulb();
 	uint8_t getTemperature();
 	float getTemperatureF();
-	void setMeasurementMode(uint8_t mode);
+	int setMeasurementMode(uint8_t mode);
 	uint8_t getMeasurementMode();
 	bool dataAvailable();
-	void enableIndicator();
-	void disableIndicator();
-	void setIndicatorCurrent(uint8_t current);
-	void enableBulb();
-	void disableBulb();
-	void setBulbCurrent(uint8_t current);
-	void softReset();
-	void setGain(uint8_t gain);
+	int enableIndicator();
+	int disableIndicator();
+	int setIndicatorCurrent(uint8_t current);
+	int enableBulb();
+	int disableBulb();
+	int setBulbCurrent(uint8_t current);
+	int softReset();
+	int setGain(uint8_t gain);
 	uint8_t getGain();
-	void setIntegrationTime(uint8_t integrationValue);
+	int setIntegrationTime(uint8_t integrationValue);
 	uint8_t getIntegrationTime();
-	void enableInterrupt();
-	void disableInterrupt();
+	int enableInterrupt();
+	int disableInterrupt();
 
 	//Get the various color readings
 	int getViolet();
@@ -92,10 +92,10 @@ private:
 	int getChannel(uint8_t channelRegister);
 	float getCalibratedValue(uint8_t calAddress);
 	float convertBytesToFloat(uint32_t myLong);
-	void clearDataAvailable();
+	int clearDataAvailable();
 	uint8_t virtualReadRegister(uint8_t virtualAddr);
-	void virtualWriteRegister(uint8_t virtualAddr, uint8_t dataToWrite);
-	void writeRegister(uint8_t addr, uint8_t val);
+	int virtualWriteRegister(uint8_t virtualAddr, uint8_t dataToWrite);
+	int writeRegister(uint8_t addr, uint8_t val);
 	uint8_t readRegister(uint8_t addr);
 
 #define AS726X_ADDR 0x49 //7-bit unshifted default I2C Address
@@ -164,11 +164,13 @@ private:
 #define AS72XX_SLAVE_TX_VALID 0x02
 #define AS72XX_SLAVE_RX_VALID 0x01
 
+#define SENSORTYPE_AS7261 0x3D
 #define SENSORTYPE_AS7262 0x3E
 #define SENSORTYPE_AS7263 0x3F
-#define SENSORTYPE_AS7261 0x40
 
 #define POLLING_DELAY 5 //Amount of ms to wait between checking for virtual register changes
+#define RETRIES 3
+#define TIMEOUT 3000
 
 	uint8_t _sensorVersion = 0;
 };

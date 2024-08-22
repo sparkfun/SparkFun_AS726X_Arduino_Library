@@ -14,23 +14,30 @@ bool AS726X::begin(TwoWire &wirePort, uint8_t gain, uint8_t measurementMode)
 	_sensorVersion = virtualReadRegister(AS726x_HW_VERSION);
 
 	//HW version for AS7262, AS7263 and AS7261
-	if (_sensorVersion != 0x3E && _sensorVersion != 0x3F && _sensorVersion != 0x40) 
+	if (_sensorVersion != SENSORTYPE_AS7261 && 
+		_sensorVersion != SENSORTYPE_AS7262 && 
+		_sensorVersion != SENSORTYPE_AS7263) 
 	{
 		return false;
 	}
 
-	setBulbCurrent(0b00); //Set to 12.5mA (minimum)
-	disableBulb(); //Turn off to avoid heating the sensor
+	//Set to 12.5mA (minimum)
+	if(setBulbCurrent(0b00)) return false;
 
-	setIndicatorCurrent(0b11); //Set to 8mA (maximum)
-	disableIndicator(); //Turn off lights to save power
+	if(disableBulb()) return false; //Turn off to avoid heating the sensor
 
-	setIntegrationTime(50); //50 * 2.8ms = 140ms. 0 to 255 is valid.
-							//If you use Mode 2 or 3 (all the colors) then integration time is double. 140*2 = 280ms between readings.
+	if(setIndicatorCurrent(0b11)) return false; //Set to 8mA (maximum)
 
-	setGain(gain); //Set gain to 64x
+	if(disableIndicator()) return false; //Turn off lights to save power
 
-	setMeasurementMode(measurementMode); //One-shot mode
+	if(setIntegrationTime(50)) return false; //50 * 2.8ms = 140ms. 0 to 255 is valid.
+
+	//If you use Mode 2 or 3 (all the colors) then integration time is double.
+	//140*2 = 280ms between readings.
+
+	if(setGain(gain)) return false; //Set gain to 64x
+
+	if(setMeasurementMode(measurementMode)) return false; //One-shot mode
 
 	return true;
 }
@@ -45,7 +52,7 @@ uint8_t AS726X::getVersion()
 //Mode 1: Continuous reading of GYOR (7262) / RTUX (7263)
 //Mode 2: Continuous reading of all channels (power-on default)
 //Mode 3: One-shot reading of all channels
-void AS726X::setMeasurementMode(uint8_t mode)
+int AS726X::setMeasurementMode(uint8_t mode)
 {
 	if (mode > 0b11) mode = 0b11;
 
@@ -53,7 +60,7 @@ void AS726X::setMeasurementMode(uint8_t mode)
 	uint8_t value = virtualReadRegister(AS726x_CONTROL_SETUP); //Read
 	value &= 0b11110011; //Clear BANK bits
 	value |= (mode << 2); //Set BANK bits with user's choice
-	virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
+	return virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
 }
 
 uint8_t AS726X::getMeasurementMode()
@@ -67,7 +74,7 @@ uint8_t AS726X::getMeasurementMode()
 //Gain 1: 3.7x
 //Gain 2: 16x
 //Gain 3: 64x
-void AS726X::setGain(uint8_t gain)
+int AS726X::setGain(uint8_t gain)
 {
 	if (gain > 0b11) gain = 0b11;
 
@@ -75,7 +82,7 @@ void AS726X::setGain(uint8_t gain)
 	uint8_t value = virtualReadRegister(AS726x_CONTROL_SETUP); //Read
 	value &= 0b11001111; //Clear GAIN bits
 	value |= (gain << 4); //Set GAIN bits with user's choice
-	virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
+	return virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
 }
 
 uint8_t AS726X::getGain()
@@ -87,9 +94,9 @@ uint8_t AS726X::getGain()
 //Sets the integration value
 //Give this function a uint8_t from 0 to 255.
 //Time will be 2.8ms * [integration value]
-void AS726X::setIntegrationTime(uint8_t integrationValue)
+int AS726X::setIntegrationTime(uint8_t integrationValue)
 {
-	virtualWriteRegister(AS726x_INT_T, integrationValue); //Write
+	return virtualWriteRegister(AS726x_INT_T, integrationValue); //Write
 }
 
 uint8_t AS726X::getIntegrationTime()
@@ -98,49 +105,59 @@ uint8_t AS726X::getIntegrationTime()
 	return value;
 }
 
-void AS726X::enableInterrupt()
+int AS726X::enableInterrupt()
 {
 	//Read, mask/set, write
 	uint8_t value = virtualReadRegister(AS726x_CONTROL_SETUP); //Read
 	value |= 0b01000000; //Set INT bit
-	virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
+	return virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
 }
 
 //Disables the interrupt pin
-void AS726X::disableInterrupt()
+int AS726X::disableInterrupt()
 {
 	//Read, mask/set, write
 	uint8_t value = virtualReadRegister(AS726x_CONTROL_SETUP); //Read
 	value &= 0b10111111; //Clear INT bit
-	virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
+	return virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
 }
 
 //Tells IC to take measurements and polls for data ready flag
-void AS726X::takeMeasurements()
+int AS726X::takeMeasurements()
 {
-	clearDataAvailable(); //Clear DATA_RDY flag when using Mode 3
+	//Clear DATA_RDY flag when using Mode 3
+	if(clearDataAvailable()) return -1;
 
-						  //Goto mode 3 for one shot measurement of all channels
-	setMeasurementMode(3);
+	 //Goto mode 3 for one shot measurement of all channels
+	if(setMeasurementMode(3)) return -1;
+
+	uint32_t timeout = millis() + TIMEOUT;
 
 	//Wait for data to be ready
-	while (dataAvailable() == false) delay(POLLING_DELAY);
+	while (dataAvailable() == false)
+	{
+		delay(POLLING_DELAY);
+		if(millis() > timeout) return -1;
+	}
 
 	//Readings can now be accessed via getViolet(), getBlue(), etc
+	return 0;
 }
 
 //Turns on bulb, takes measurements, turns off bulb
-void AS726X::takeMeasurementsWithBulb()
+int AS726X::takeMeasurementsWithBulb()
 {
 	//enableIndicator(); //Tell the world we are taking a reading. 
 	//The indicator LED is red and may corrupt the readings
 
-	enableBulb(); //Turn on bulb to take measurement
+	if(enableBulb()) return -1; //Turn on bulb to take measurement
 
-	takeMeasurements();
+	if(takeMeasurements()) return -1;
 
-	disableBulb(); //Turn off bulb to avoid heating sensor
-				   //disableIndicator();
+	if(disableBulb()) return -1; //Turn off bulb to avoid heating sensor
+	//disableIndicator();
+
+	return 0;
 }
 
 //Get the various color readings
@@ -239,58 +256,58 @@ bool AS726X::dataAvailable()
 
 //Clears the DRDY flag
 //Normally this should clear when data registers are read
-void AS726X::clearDataAvailable()
+int AS726X::clearDataAvailable()
 {
 	uint8_t value = virtualReadRegister(AS726x_CONTROL_SETUP);
 	value &= ~(1 << 1); //Set the DATA_RDY bit
-	virtualWriteRegister(AS726x_CONTROL_SETUP, value);
+	return virtualWriteRegister(AS726x_CONTROL_SETUP, value);
 }
 
 //Enable the onboard indicator LED
-void AS726X::enableIndicator()
+int AS726X::enableIndicator()
 {
 	//Read, mask/set, write
 	uint8_t value = virtualReadRegister(AS726x_LED_CONTROL);
 	value |= (1 << 0); //Set the bit
-	virtualWriteRegister(AS726x_LED_CONTROL, value);
+	return virtualWriteRegister(AS726x_LED_CONTROL, value);
 }
 
 //Disable the onboard indicator LED
-void AS726X::disableIndicator()
+int AS726X::disableIndicator()
 {
 	//Read, mask/set, write
 	uint8_t value = virtualReadRegister(AS726x_LED_CONTROL);
 	value &= ~(1 << 0); //Clear the bit
-	virtualWriteRegister(AS726x_LED_CONTROL, value);
+	return virtualWriteRegister(AS726x_LED_CONTROL, value);
 }
 
 //Set the current limit of onboard LED. Default is max 8mA = 0b11.
-void AS726X::setIndicatorCurrent(uint8_t current)
+int AS726X::setIndicatorCurrent(uint8_t current)
 {
 	if (current > 0b11) current = 0b11;
 	//Read, mask/set, write
 	uint8_t value = virtualReadRegister(AS726x_LED_CONTROL); //Read
 	value &= 0b11111001; //Clear ICL_IND bits
 	value |= (current << 1); //Set ICL_IND bits with user's choice
-	virtualWriteRegister(AS726x_LED_CONTROL, value); //Write
+	return virtualWriteRegister(AS726x_LED_CONTROL, value); //Write
 }
 
 //Enable the onboard 5700k or external incandescent bulb
-void AS726X::enableBulb()
+int AS726X::enableBulb()
 {
 	//Read, mask/set, write
 	uint8_t value = virtualReadRegister(AS726x_LED_CONTROL);
 	value |= (1 << 3); //Set the bit
-	virtualWriteRegister(AS726x_LED_CONTROL, value);
+	return virtualWriteRegister(AS726x_LED_CONTROL, value);
 }
 
 //Disable the onboard 5700k or external incandescent bulb
-void AS726X::disableBulb()
+int AS726X::disableBulb()
 {
 	//Read, mask/set, write
 	uint8_t value = virtualReadRegister(AS726x_LED_CONTROL);
 	value &= ~(1 << 3); //Clear the bit
-	virtualWriteRegister(AS726x_LED_CONTROL, value);
+	return virtualWriteRegister(AS726x_LED_CONTROL, value);
 }
 
 //Set the current limit of bulb/LED.
@@ -298,7 +315,7 @@ void AS726X::disableBulb()
 //Current 1: 25mA
 //Current 2: 50mA
 //Current 3: 100mA
-void AS726X::setBulbCurrent(uint8_t current)
+int AS726X::setBulbCurrent(uint8_t current)
 {
 	if (current > 0b11) current = 0b11; //Limit to two bits
 
@@ -306,7 +323,7 @@ void AS726X::setBulbCurrent(uint8_t current)
 	uint8_t value = virtualReadRegister(AS726x_LED_CONTROL); //Read
 	value &= 0b11001111; //Clear ICL_DRV bits
 	value |= (current << 4); //Set ICL_DRV bits with user's choice
-	virtualWriteRegister(AS726x_LED_CONTROL, value); //Write
+	return virtualWriteRegister(AS726x_LED_CONTROL, value); //Write
 }
 
 //Returns the temperature in C
@@ -326,18 +343,19 @@ float AS726X::getTemperatureF()
 
 //Does a soft reset
 //Give sensor at least 1000ms to reset
-void AS726X::softReset()
+int AS726X::softReset()
 {
 	//Read, mask/set, write
 	uint8_t value = virtualReadRegister(AS726x_CONTROL_SETUP); //Read
 	value |= (1 << 7); //Set RST bit
-	virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
+	return virtualWriteRegister(AS726x_CONTROL_SETUP, value); //Write
 }
 
 //Read a virtual register from the AS726x
 uint8_t AS726X::virtualReadRegister(uint8_t virtualAddr)
 {
 	uint8_t status;
+	uint8_t retries = 0;
 
 	//Do a prelim check of the read register
 	status = readRegister(AS72XX_SLAVE_STATUS_REG);
@@ -351,19 +369,25 @@ uint8_t AS726X::virtualReadRegister(uint8_t virtualAddr)
 	while (1)
 	{
 		status = readRegister(AS72XX_SLAVE_STATUS_REG);
+		if (status == 0xFF) return status;
 		if ((status & AS72XX_SLAVE_TX_VALID) == 0) break; // If TX bit is clear, it is ok to write
 		delay(POLLING_DELAY);
+		if(retries++ > retries) return 0xFF;
 	}
 
 	// Send the virtual register address (bit 7 should be 0 to indicate we are reading a register).
-	writeRegister(AS72XX_SLAVE_WRITE_REG, virtualAddr);
+	if(writeRegister(AS72XX_SLAVE_WRITE_REG, virtualAddr)) return 0xFF;
+
+	retries = 0;
 
 	//Wait for READ flag to be set
 	while (1)
 	{
 		status = readRegister(AS72XX_SLAVE_STATUS_REG);
+		if (status == 0xFF) return status;
 		if ((status & AS72XX_SLAVE_RX_VALID) != 0) break; // Read data is ready.
 		delay(POLLING_DELAY);
+		if(retries++ > retries) return 0xFF;
 	}
 
 	uint8_t incoming = readRegister(AS72XX_SLAVE_READ_REG);
@@ -371,55 +395,72 @@ uint8_t AS726X::virtualReadRegister(uint8_t virtualAddr)
 }
 
 //Write to a virtual register in the AS726x
-void AS726X::virtualWriteRegister(uint8_t virtualAddr, uint8_t dataToWrite)
+int AS726X::virtualWriteRegister(uint8_t virtualAddr, uint8_t dataToWrite)
 {
 	uint8_t status;
+	uint8_t retries = 0;
 
 	//Wait for WRITE register to be empty
 	while (1)
 	{
 		status = readRegister(AS72XX_SLAVE_STATUS_REG);
+		if (status == 0xFF) return -1;
 		if ((status & AS72XX_SLAVE_TX_VALID) == 0) break; // No inbound TX pending at slave. Okay to write now.
 		delay(POLLING_DELAY);
+		if(retries++ > retries) return -1;
 	}
 
 	// Send the virtual register address (setting bit 7 to indicate we are writing to a register).
 	writeRegister(AS72XX_SLAVE_WRITE_REG, (virtualAddr | 0x80));
 
+	retries = 0;
+
 	//Wait for WRITE register to be empty
 	while (1)
 	{
 		status = readRegister(AS72XX_SLAVE_STATUS_REG);
+		if (status == 0xFF) return -1;
 		if ((status & AS72XX_SLAVE_TX_VALID) == 0) break; // No inbound TX pending at slave. Okay to write now.
 		delay(POLLING_DELAY);
+		if(retries++ > retries) return -1;
 	}
 
 	// Send the data to complete the operation.
 	writeRegister(AS72XX_SLAVE_WRITE_REG, dataToWrite);
+
+	return 0;
 }
 
 //Reads from a give location from the AS726x
 uint8_t AS726X::readRegister(uint8_t addr)
 {
-	_i2cPort->beginTransmission(AS726X_ADDR);
-	_i2cPort->write(addr);
-	_i2cPort->endTransmission();
+	uint8_t err = 0xFF;
 
-	_i2cPort->requestFrom(AS726X_ADDR, 1);
+	_i2cPort->beginTransmission(AS726X_ADDR);
+	if(_i2cPort->write(addr) == 0) return err;
+	if(_i2cPort->endTransmission()) return err;
+
+	if(_i2cPort->requestFrom(AS726X_ADDR, 1) == 0) return err;
 	if (_i2cPort->available()) {
 		return (_i2cPort->read());
 	}
 	else {
 		Serial.println("I2C Error");
-		return (0xFF); //Error
+		return err; //Error
 	}
+
+	return 0;
 }
 
 //Write a value to a spot in the AS726x
-void AS726X::writeRegister(uint8_t addr, uint8_t val)
+int AS726X::writeRegister(uint8_t addr, uint8_t val)
 {
+	uint8_t err = 0xFF;
+
 	_i2cPort->beginTransmission(AS726X_ADDR);
-	_i2cPort->write(addr);
-	_i2cPort->write(val);
-	_i2cPort->endTransmission();
+	if(_i2cPort->write(addr) == 0) return (int)err;
+	if(_i2cPort->write(val) == 0) return (int)err;
+	if(_i2cPort->endTransmission()) return (int)err;
+
+	return 0;
 }
