@@ -169,7 +169,7 @@ private:
 #define SENSORTYPE_AS7263 0x3F
 
 #define POLLING_DELAY 5 //Amount of ms to wait between checking for virtual register changes
-#define RETRIES 3
+#define MAX_RETRIES 3
 #define TIMEOUT 3000
 
 	uint8_t _sensorVersion = 0;

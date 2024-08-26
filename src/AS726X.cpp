@@ -372,7 +372,7 @@ uint8_t AS726X::virtualReadRegister(uint8_t virtualAddr)
 		if (status == 0xFF) return status;
 		if ((status & AS72XX_SLAVE_TX_VALID) == 0) break; // If TX bit is clear, it is ok to write
 		delay(POLLING_DELAY);
-		if(retries++ > retries) return 0xFF;
+		if(retries++ > MAX_RETRIES) return 0xFF;
 	}
 
 	// Send the virtual register address (bit 7 should be 0 to indicate we are reading a register).
@@ -387,7 +387,7 @@ uint8_t AS726X::virtualReadRegister(uint8_t virtualAddr)
 		if (status == 0xFF) return status;
 		if ((status & AS72XX_SLAVE_RX_VALID) != 0) break; // Read data is ready.
 		delay(POLLING_DELAY);
-		if(retries++ > retries) return 0xFF;
+		if(retries++ > MAX_RETRIES) return 0xFF;
 	}
 
 	uint8_t incoming = readRegister(AS72XX_SLAVE_READ_REG);
@@ -407,7 +407,7 @@ int AS726X::virtualWriteRegister(uint8_t virtualAddr, uint8_t dataToWrite)
 		if (status == 0xFF) return -1;
 		if ((status & AS72XX_SLAVE_TX_VALID) == 0) break; // No inbound TX pending at slave. Okay to write now.
 		delay(POLLING_DELAY);
-		if(retries++ > retries) return -1;
+		if(retries++ > MAX_RETRIES) return -1;
 	}
 
 	// Send the virtual register address (setting bit 7 to indicate we are writing to a register).
@@ -422,7 +422,7 @@ int AS726X::virtualWriteRegister(uint8_t virtualAddr, uint8_t dataToWrite)
 		if (status == 0xFF) return -1;
 		if ((status & AS72XX_SLAVE_TX_VALID) == 0) break; // No inbound TX pending at slave. Okay to write now.
 		delay(POLLING_DELAY);
-		if(retries++ > retries) return -1;
+		if(retries++ > MAX_RETRIES) return -1;
 	}
 
 	// Send the data to complete the operation.
