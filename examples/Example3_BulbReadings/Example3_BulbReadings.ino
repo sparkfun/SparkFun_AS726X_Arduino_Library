@@ -27,13 +27,13 @@ byte GAIN = 2;
 byte MEASUREMENT_MODE = 0;
 
 void setup() {
+  Wire.begin();
+  Serial.begin(115200);
+  
   sensor.begin(Wire, GAIN, MEASUREMENT_MODE);
 }
 
 void loop() {
-  Wire.begin();
-  Serial.begin(115200);
-  
   sensor.takeMeasurementsWithBulb();
   
   if (sensor.getVersion() == SENSORTYPE_AS7262)
