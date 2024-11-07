@@ -72,4 +72,6 @@ void loop() {
   Serial.print("] tempF[");
   Serial.print(sensor.getTemperatureF(), 1);
   Serial.print("]");
+
+  Serial.println();
 }
